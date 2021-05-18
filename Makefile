@@ -7,7 +7,7 @@ CXXFLAGS = -g -std=gnu++11 -O1 -Wall
 LDFLAGS = -lrt -lpthread
 #LDLIBS = -lm
 
-SOURCES = change_me.c mzapo_phys.c mzapo_parlcd.c
+SOURCES = change_me.c mzapo_phys.c mzapo_parlcd.c wArial_88.c game_fnc.c lcd_text.c
 #SOURCES += font_prop14x16.c font_rom8x16.c
 TARGET_EXE = change_me
 #TARGET_IP ?= 192.168.202.127
