@@ -5,10 +5,10 @@ CPPFLAGS = -I .
 CFLAGS =-g -std=gnu99 -O1 -Wall
 CXXFLAGS = -g -std=gnu++11 -O1 -Wall
 LDFLAGS = -lrt -lpthread
-#LDLIBS = -lm
+LDLIBS = -lm
 
-SOURCES = change_me.c mzapo_phys.c mzapo_parlcd.c wArial_88.c game_fnc.c lcd_text.c
-#SOURCES += font_prop14x16.c font_rom8x16.c
+SOURCES = change_me.c mzapo_phys.c mzapo_parlcd.c game_fnc.c lcd_text.c utils.c 
+SOURCES += font_prop14x16.c font_rom8x16.c wArial_88.c
 TARGET_EXE = change_me
 #TARGET_IP ?= 192.168.202.127
 ifeq ($(TARGET_IP),)
