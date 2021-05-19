@@ -2,18 +2,20 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <math.h>
 
 
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
 #include "font_types.h"
 #include "lcd_text.h"
+#include "utils.h"
 
 #include "game_fcn.h"
 
 
-#define PADDLE_THICNESS 30 //px
-#define PADDLE_HEIGHT 90   //px
+#define PADDLE_THICNESS 20 //px
+#define PADDLE_HEIGHT 70   //px
 #define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
 
 /*inicialize paddles to start positions*/
@@ -23,6 +25,7 @@ paddle initLeftpaddle()
   left_paddle.start = 10;
   left_paddle.thicness = PADDLE_THICNESS; //basicly constant
   left_paddle.edge = left_paddle.start + PADDLE_THICNESS;
+  left_paddle.speed = 0;
   return left_paddle;
 }
 paddle initRightpaddle()
@@ -31,12 +34,27 @@ paddle initRightpaddle()
   right_paddle.start = 440;
   right_paddle.thicness = PADDLE_THICNESS;
   right_paddle.edge = right_paddle.start;
+  right_paddle.speed = 0;
   return right_paddle;
 }
 
-
-void update_paddle_position(unsigned char *mem_base, int* pos_l , int* pos_r)
+/*spawns ball in random 45° direction on center*/
+ball init_ball()
 {
+  ball ball;
+  ball.dx = 0.7 * rand_sign();
+  ball.dy = 0.7 * rand_sign();
+  
+  ball.pos_y = 160;
+  ball.pos_x = 240;
+
+  return ball;
+}
+
+void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right)
+{
+    int oldpos_l = left->position;
+    int oldpos_r = right->position;
     uint32_t rgb_knobs_value;
     rgb_knobs_value = *(volatile uint32_t *)(mem_base + SPILED_REG_KNOBS_8BIT_o);
     printf("rgb_knobs_value %x\n", rgb_knobs_value);  
@@ -55,30 +73,33 @@ void update_paddle_position(unsigned char *mem_base, int* pos_l , int* pos_r)
     printf("percent right %d\n", percent_right);
 
     //asign position acordingly to knobs relative value
-    *pos_l = (275 * percent_left) / 100;
-    *pos_r = (275 * percent_right) / 100;
+    left->position = (320 * percent_left) / 100;
+    right->position = (320 * percent_right) / 100;
     
 
-    if (*pos_l <= 45)
+    if (left->position <= 35)
     {
-      *pos_l = 45;
+      left->position = 35;
     }
-    if (*pos_r <= 45)
+    if (right->position <= 35)
     {
-      *pos_r = 45;
+      right->position = 35;
     }
-    if (*pos_l >= 275)
+    if (left->position >= 285)
     {
-      *pos_l = 275;
+      left->position = 285;
     }
-    if (*pos_r >= 275)
+    if (right->position >= 285)
     {
-      *pos_r = 275;
+      right->position = 285;
     }
-    printf("pos left %d\n", *pos_l);
-    printf("pos right %d\n", *pos_r);
+    printf("pos left %d\n", left->position);
+    printf("pos right %d\n", right->position);
 
+  left->speed = (oldpos_l - left->position)/100;
+  right->speed = (oldpos_r - right->position)/100;
 }   
+
 
 void draw_score(void)
 {
@@ -129,7 +150,7 @@ void goal(int p, unsigned char *mem_base)
 #define DISPLAY_HEIGHT 320
 void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right)
 {
-  game.goal = false;
+  game.goal = 0;
   //check upper and lower bound
   if(ball->pos_y >= DISPLAY_HEIGHT || ball->pos_y <= 0){
     ball->dy = ball->dy *-1;
@@ -138,26 +159,43 @@ void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *righ
   //check for left - right = goal
   if(ball->pos_x <= 0){
     goal(1, mem_base);
-    game.goal = true;
+    game.goal = 1;
   }else if(ball->pos_x >= DISPLAY_WIDTH){
     goal(2, mem_base);
-    game.goal = true;
+    game.goal = 2;
   }
 
   //collisions with paddles
-  if(ball->pos_x <= left->edge 
+  if(ball->pos_x-18 <= left->edge 
   && ball->pos_y >= left->position - (PADDLE_HEIGHT/2) 
   && ball->pos_y <= left->position + (PADDLE_HEIGHT/2) ){
-    ball->dx = ball->dx *-1;
+    //ball->dx = ball->dx *-1;
+    ball->dy = ball->dy + left->speed;
+    ball->dx = sqrt( ((1)-((ball->dy)^2)) ) * -1;
   }
-  if(ball->pos_x >= right->edge 
+  if(ball->pos_x+18 >= right->edge 
   && ball->pos_y >= left->position - (PADDLE_HEIGHT/2) 
   && ball->pos_y <= left->position + (PADDLE_HEIGHT/2) ){
-    ball->dx = ball->dx *-1;
+    //ball->dx = ball->dx *-1;
+    ball->dy = ball->dy + right->speed;
+    ball->dx = sqrt( ((1)-((ball->dy)^2)) ) * -1;
   }
 
   //move ball
-  ball->pos_x += ball->dx;
-  ball->pos_y += ball->dy;
+  if(game.goal){  //sets ball to one of the players with random direction
+    ball->dy = rand_sign();
+    if(game.goal==1){
+      ball->pos_y = left->position;
+      ball->pos_x = 70;
+      ball->dx = 1;
+    }else if(game.goal==2){
+      ball->pos_y = right->position;
+      ball->pos_x = 410;
+      ball->dx = -1;
+    }
+  }else{  //no goal, just move ball
+    ball->pos_x += ball->dx;
+    ball->pos_y += ball->dy;
+  }
 
 }
