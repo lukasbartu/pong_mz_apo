@@ -17,42 +17,18 @@
 #include "mzapo_regs.h"
 #include "game_fcn.h"
 #include "lcd_text.h"
-
+#include "colors.h"
 #include "font_types.h"
 
 #define DISPLAY_WIDTH 480
 #define DISPLAY_HEIGHT 320
 
 
-void lcd_draw(unsigned char *parlcd_mem_base)
-{
-  printf("Draw LCD\n"); //now draw the FB on the screen
-  parlcd_write_cmd(parlcd_mem_base, 0x2c);
-  for (int ptr = 0; ptr < DISPLAY_WIDTH * DISPLAY_HEIGHT; ptr++)
-  {
-    parlcd_write_data(parlcd_mem_base, game.fb[ptr]);
-  }
-  printf("drawn LCD\n");
-}
+#define PADDLE_THICNESS 30 //px
 
-void black_lcd_draw(unsigned char *parlcd_mem_base)
-{
-  for (int ptr = 0; ptr < 320*480 ; ptr++) {
-    game.fb[ptr]=0x0000; //0u - unsigned int
-  }
-  printf("Draw black LCD\n"); //now draw the FB on the screen
-  parlcd_write_cmd(parlcd_mem_base, 0x2c);
-  for (int ptr = 0; ptr < DISPLAY_WIDTH * DISPLAY_HEIGHT; ptr++)
-  {
-    parlcd_write_data(parlcd_mem_base, game.fb[ptr]);
-  }
-  printf("drawn black LCD\n");
-}
-
-
-
+#define PADDLE_HEIGHT 90   //px
 #define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
-#define PADDLE_HEIGHT 70   //px
+
 int main(int argc, char *argv[])
 {
   unsigned char *mem_base;
@@ -60,13 +36,13 @@ int main(int argc, char *argv[])
   uint32_t val_line = 5;
   int i, j;
   int ptr;
-  printf("alloc FB\n");
+  printf("Alloc FB\n");
   game.fb = (unsigned short *)malloc(DISPLAY_HEIGHT * DISPLAY_WIDTH * 2); //allocates frame buffer
   if(!game.fb){
-    exit(2);
+    exit(1);
   }
   printf("Hello world\n");
-  
+
   sleep(1);
 
   /*
@@ -88,7 +64,7 @@ int main(int argc, char *argv[])
   }
 
   parlcd_mem_base = map_phys_address(PARLCD_REG_BASE_PHYS, PARLCD_REG_SIZE, 0);
-
+  /* If mapping fails exit with error code */
   if (parlcd_mem_base == NULL)
     exit(1);
 
@@ -105,34 +81,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  //  font template
-  int x = 95;
-  char str[]="INSERT";
-  char *ch=str;
-  char str2[]="coin";
-  printf("font des\n");
-  font_descriptor_t* fdes = &font_wArial_88;
-  
-  black_lcd_draw(parlcd_mem_base);
-
-  for (i=0; i<6; i++) {
-    printf("Draw char %c\n", *ch);
-    draw_char(x, 60, fdes, *ch, game.fb);
-    x+=char_width(fdes, *ch);
-    ch++;
-  }
-  x = 167;
-  ch=str2;
-  for (i=0; i<4; i++) {
-    printf("Draw char %c\n", *ch);
-    draw_char(x, 155, fdes, *ch, game.fb);
-    x+=char_width(fdes, *ch);
-    ch++;
-  }
-  
-  lcd_draw(parlcd_mem_base);
-
-  sleep(1.5);
   /*
       * Access register holding 8 bit relative knobs position
       * The type "(volatile uint32_t*)" casts address obtained
@@ -162,18 +110,13 @@ int main(int argc, char *argv[])
     uint8 b0 = (uint8)(tmp>>0);*/
 
   //splits knobs value to two variables
-  
+
   paddle left_paddle = initLeftpaddle();   //init
   paddle right_paddle = initRightpaddle(); //init
-  ball ball = init_ball();
 
-  int n=0;
-  while(n<=200){
-    printf("while n:%d\n", n);
-    black_lcd_draw(parlcd_mem_base);
-    update_paddle_position(mem_base, &left_paddle , &right_paddle);
-    update_ball(mem_base, &ball, &left_paddle, &right_paddle);
+  update_paddle_position(mem_base, &left_paddle.position , &right_paddle.position);
 
+  
   left_paddle.offset = DISPLAY_WIDTH * (left_paddle.position - (PADDLE_HEIGHT / 2)); //set offset acording to position
   right_paddle.offset = DISPLAY_WIDTH * (right_paddle.position - (PADDLE_HEIGHT / 2));
 
@@ -183,7 +126,7 @@ int main(int argc, char *argv[])
   { //increment 90 lines of height
     for (int x = 0; x < left_paddle.thicness; x++)
     {                     //increment 30px width - starts at left offset
-      game.fb[y + x] = 0xFC1F; //make box of pink (I like pink, white will be eventually)
+      game.fb[y + x] = 0xFFFF; 
       //printf("FB y- %d; x- %d \n", y, x); //just to see what is the hell going on
     }
   }
@@ -194,38 +137,15 @@ int main(int argc, char *argv[])
   { //increment 90 lines of height
     for (int x = 0; x < right_paddle.thicness; x++)
     {                     //increment 30px width - starts at left offset
-      game.fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
+      game.fb[y + x] = 0xFFFF; 
       //printf("FB y- %d; x- %d \n", y, x);
     }
   }
 
-  //ball to fb
-  ball.offset = DISPLAY_WIDTH * (ball.pos_y - (18 / 2)); // 18x18px ball 
+  lcd_draw(parlcd_mem_base, game.fb);
 
-    for (int y = ball.offset + (ball.pos_x-(18/2));
-        y < ball.offset + (ball.pos_x-(18/2)) + (18 * DISPLAY_WIDTH);
-        y += DISPLAY_WIDTH)
-    { //increment 90 lines of height
-      for (int x = 0; x < 18; x++)
-      {                     //increment 30px width - starts at left offset
-        game.fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
-        //printf("FB y- %d; x- %d \n", y, x);
-      }
-    }
-    n++;
-
-    lcd_draw(parlcd_mem_base);
-    
-  }
-
-
-
-  lcd_draw(parlcd_mem_base);
-  sleep(5);
   /*end of drawing paddles*/
-
   
-  black_lcd_draw(parlcd_mem_base);
   printf("Goodbye world\n");
 
   return 0;
