@@ -42,8 +42,8 @@ paddle initRightpaddle()
 ball init_ball()
 {
   ball ball;
-  ball.dx = 0.7 * rand_sign();
-  ball.dy = 0.7 * rand_sign();
+  ball.dx = 10 * 0.7 * rand_sign();
+  ball.dy = 10 * 0.7 * rand_sign();
   
   ball.pos_y = 160;
   ball.pos_x = 240;
@@ -77,22 +77,19 @@ void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right
     right->position = (320 * percent_right) / 100;
     
 
-    if (left->position <= 35)
-    {
+    if (left->position <= 35){
       left->position = 35;
     }
-    if (right->position <= 35)
-    {
+    if (right->position <= 35){
       right->position = 35;
     }
-    if (left->position >= 285)
-    {
+    if (left->position >= 285){
       left->position = 285;
     }
-    if (right->position >= 285)
-    {
+    if (right->position >= 285){
       right->position = 285;
     }
+    left->position = 160;
     printf("pos left %d\n", left->position);
     printf("pos right %d\n", right->position);
 
@@ -101,12 +98,14 @@ void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right
 }   
 
 
-void draw_score(void)
+void draw_score()
 {
+    printf("font descripption\n");
     font_descriptor_t* fdes = &font_wArial_88;
     char ch1 = game.score_p1 + '0'; //coverts score int to char for print
     char ch2 = '-';
     char ch3 = game.score_p2 + '0';
+    printf("ch 1: %c, ch 2: %c, ch 3: %c\n", ch1 ,ch2, ch3);
 
     draw_char(153 , 116, fdes, ch1, game.fb);
     draw_char(227, 116, fdes, ch2, game.fb);
@@ -116,30 +115,26 @@ void draw_score(void)
 void goal(int p, unsigned char *mem_base)
 {
   if(p == 1){
-    game.score_p1++;
-
-    draw_score();
-
+    //draw_score();
+    
     for(int i=0; i<5; i++){
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x000086C0; //blue
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x000086C0; //blue
-      sleep(0.2);
+      usleep(300000);
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00000000; //off
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00000000; //off
-      sleep(0.2);
+      usleep(300000);
     }
   }else if(p == 2){
-    game.score_p2++;
-
-    draw_score();
+    //draw_score();
 
     for(int i=0; i<5; i++){
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00D32627; //red
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00D32627; //red
-      sleep(0.2);
+      usleep(300000);
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00000000; //off
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00000000; //off
-      sleep(0.2);
+      usleep(300000);
     }
   }
 
@@ -151,51 +146,75 @@ void goal(int p, unsigned char *mem_base)
 void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right)
 {
   game.goal = 0;
+  printf("check upper and lower bound\n");
   //check upper and lower bound
-  if(ball->pos_y >= DISPLAY_HEIGHT || ball->pos_y <= 0){
-    ball->dy = ball->dy *-1;
+  if(ball->pos_y+19 >= DISPLAY_HEIGHT || ball->pos_y-19 <= 0){
+    ball->dy = ball->dy *-1.0;
   }
 
+  printf("check for left - right\n");
   //check for left - right = goal
-  if(ball->pos_x <= 0){
+  if(ball->pos_x-19 <= 0){
+    game.score_p2 += 1;
+    printf("goal\n");
     goal(1, mem_base);
     game.goal = 1;
-  }else if(ball->pos_x >= DISPLAY_WIDTH){
+  }
+  if(ball->pos_x+19 >= DISPLAY_WIDTH){
+    game.score_p1 += 1;
+    printf("goal\n");
     goal(2, mem_base);
     game.goal = 2;
   }
 
+  printf("collisions with paddles\n");
   //collisions with paddles
-  if(ball->pos_x-18 <= left->edge 
+  if(ball->pos_x-1 <= left->edge 
   && ball->pos_y >= left->position - (PADDLE_HEIGHT/2) 
   && ball->pos_y <= left->position + (PADDLE_HEIGHT/2) ){
     //ball->dx = ball->dx *-1;
-    ball->dy = ball->dy + left->speed;
-    ball->dx = sqrt( ((1)-((ball->dy)^2)) ) * -1;
+    ball->dy = ball->dy + (10 * left->speed);
+    ball->dx = sqrt( ((100)-(pow(ball->dy,2))) );
+    printf("collied\n");
   }
-  if(ball->pos_x+18 >= right->edge 
-  && ball->pos_y >= left->position - (PADDLE_HEIGHT/2) 
-  && ball->pos_y <= left->position + (PADDLE_HEIGHT/2) ){
+  if(ball->pos_x+19 >= right->edge 
+  && ball->pos_y >= right->position - (PADDLE_HEIGHT/2) 
+  && ball->pos_y <= right->position + (PADDLE_HEIGHT/2) ){
     //ball->dx = ball->dx *-1;
-    ball->dy = ball->dy + right->speed;
-    ball->dx = sqrt( ((1)-((ball->dy)^2)) ) * -1;
+    ball->dy = ball->dy + (10 * right->speed);
+    ball->dx = sqrt( ((100)-(pow(ball->dy,2))) ) * -1;
+    printf("collied\n");
   }
 
   //move ball
   if(game.goal){  //sets ball to one of the players with random direction
-    ball->dy = rand_sign();
+    ball->dy = 10 * 0.7 * rand_sign();
     if(game.goal==1){
       ball->pos_y = left->position;
       ball->pos_x = 70;
-      ball->dx = 1;
+      ball->dx = 10 * 0.7;
     }else if(game.goal==2){
       ball->pos_y = right->position;
       ball->pos_x = 410;
-      ball->dx = -1;
+      ball->dx = -10 * 0.7;
     }
   }else{  //no goal, just move ball
     ball->pos_x += ball->dx;
     ball->pos_y += ball->dy;
   }
+
+  if (ball->pos_x <= 0){
+      ball->pos_x = 0;
+    }
+    if (ball->pos_y <= 18){
+      ball->pos_y = 18;
+    }
+    if (ball->pos_x >= 462){
+      ball->pos_x = 462;
+    }
+    if (ball->pos_y >= 302){
+      ball->pos_y = 302;
+    }
+    printf("pos ball x%d ,y%d; smer: dx%f, dy%f\n", ball->pos_x, ball->pos_y, ball->dx, ball->dy);
 
 }
