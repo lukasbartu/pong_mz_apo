@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 #include "lcd_text.h"
 
@@ -5,9 +6,10 @@
 #define DISPLAY_HEIGHT 320
 
 void draw_pixel(int x, int y, unsigned short color, unsigned short *fb)
-{ //self explanatory, not yet used
+{ //self explanatory
   if (x >= 0 && x < DISPLAY_WIDTH && y >= 0 && y < DISPLAY_HEIGHT)
   {
+    printf("write pixel to buffer\n");
     fb[x + DISPLAY_WIDTH * y] = color;
   }
 }
@@ -52,7 +54,7 @@ void draw_char(int x, int y, font_descriptor_t *fdes, char ch, unsigned short *f
             x_tmp = x;
         }
     }
-  //printf("I have temp\n");
+  printf("char written\n");
 
 }
 
