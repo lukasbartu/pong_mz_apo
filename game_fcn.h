@@ -28,7 +28,6 @@ typedef struct {
 
 static struct {
   unsigned short *fb;
-  unsigned short *black_fb;
 
   int score_p1;
   int score_p2;
@@ -38,7 +37,7 @@ static struct {
   .score_p1 = 0,
   .score_p2 = 0,
 
-  .goal = 0;
+  .goal = 0
 };
 
 paddle initLeftpaddle();
