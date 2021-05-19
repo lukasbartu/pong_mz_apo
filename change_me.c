@@ -1,6 +1,5 @@
 /*******************************************************************
-  Edited template for MZ_APO - paddles acording to knobs - starting 
-  to work with FB and knobs
+  Makes basic implementations of pong for testing
 
  *******************************************************************/
 
@@ -37,13 +36,16 @@ void lcd_draw(unsigned char *parlcd_mem_base)
 
 void black_lcd_draw(unsigned char *parlcd_mem_base)
 {
-  printf("Draw LCD\n"); //now draw the FB on the screen
+  for (int ptr = 0; ptr < 320*480 ; ptr++) {
+    game.fb[ptr]=0x0000; //0u - unsigned int
+  }
+  printf("Draw black LCD\n"); //now draw the FB on the screen
   parlcd_write_cmd(parlcd_mem_base, 0x2c);
   for (int ptr = 0; ptr < DISPLAY_WIDTH * DISPLAY_HEIGHT; ptr++)
   {
-    parlcd_write_data(parlcd_mem_base, game.black_fb[ptr]);
+    parlcd_write_data(parlcd_mem_base, game.fb[ptr]);
   }
-  printf("drawn LCD\n");
+  printf("drawn black LCD\n");
 }
 
 
@@ -59,14 +61,11 @@ int main(int argc, char *argv[])
   int ptr;
   printf("alloc FB\n");
   game.fb = (unsigned short *)malloc(DISPLAY_HEIGHT * DISPLAY_WIDTH * 2); //allocates frame buffer
-  game.black_fb = (unsigned short *)malloc(DISPLAY_HEIGHT * DISPLAY_WIDTH * 2); //allocates frame buffer for balk screen
-  if(!game.fb || !game.black_fb){
+  if(!game.fb){
     exit(2);
   }
   printf("Hello world\n");
-  for (ptr = 0; ptr < 320*480 ; ptr++) {
-    game.black_fb[ptr]=0x0000; //0u - unsigned int
-  }
+  
   sleep(1);
 
   /*
@@ -105,6 +104,34 @@ int main(int argc, char *argv[])
     }
   }
 
+  //  font template
+  int x = 95;
+  char str[]="INSERT";
+  char *ch=str;
+  char str2[]="coin";
+  printf("font des\n");
+  font_descriptor_t* fdes = &font_wArial_88;
+  
+  black_lcd_draw(parlcd_mem_base);
+
+  for (i=0; i<6; i++) {
+    printf("Draw char %c\n", *ch);
+    draw_char(x, 60, fdes, *ch, game.fb);
+    x+=char_width(fdes, *ch);
+    ch++;
+  }
+  x = 167;
+  ch=str2;
+  for (i=0; i<4; i++) {
+    printf("Draw char %c\n", *ch);
+    draw_char(x, 155, fdes, *ch, game.fb);
+    x+=char_width(fdes, *ch);
+    ch++;
+  }
+  
+  lcd_draw(parlcd_mem_base);
+
+  sleep(1.5);
   /*
       * Access register holding 8 bit relative knobs position
       * The type "(volatile uint32_t*)" casts address obtained
@@ -134,13 +161,18 @@ int main(int argc, char *argv[])
     uint8 b0 = (uint8)(tmp>>0);*/
 
   //splits knobs value to two variables
-
+  
   paddle left_paddle = initLeftpaddle();   //init
   paddle right_paddle = initRightpaddle(); //init
+  ball ball = init_ball();
 
-  update_paddle_position(mem_base, &left_paddle.position , &right_paddle.position);
+  int n=0;
+  while(n<=200){
+    printf("while n:%d\n", n);
+    black_lcd_draw(parlcd_mem_base);
+    update_paddle_position(mem_base, &left_paddle , &right_paddle);
+    update_ball(mem_base, &ball, &left_paddle, &right_paddle);
 
-  
   left_paddle.offset = DISPLAY_WIDTH * (left_paddle.position - (PADDLE_HEIGHT / 2)); //set offset acording to position
   right_paddle.offset = DISPLAY_WIDTH * (right_paddle.position - (PADDLE_HEIGHT / 2));
 
@@ -167,13 +199,8 @@ int main(int argc, char *argv[])
   }
 
   //ball to fb
-
-  ball ball = init_ball();
-  
   ball.offset = DISPLAY_WIDTH * (ball.pos_y - (18 / 2)); // 18x18px ball 
 
-  int n;
-  while(n<=10){
     for (int y = ball.offset + (ball.pos_x-(18/2));
         y < ball.offset + (ball.pos_x-(18/2)) + (18 * DISPLAY_WIDTH);
         y += DISPLAY_WIDTH)
@@ -185,8 +212,9 @@ int main(int argc, char *argv[])
       }
     }
     n++;
+
     lcd_draw(parlcd_mem_base);
-    update_ball(mem_base, &ball, &left_paddle, &right_paddle);
+    
   }
 
 
@@ -195,33 +223,8 @@ int main(int argc, char *argv[])
   sleep(5);
   /*end of drawing paddles*/
 
-  //  font template
-  int x = 95;
-  char str[]="INSERT";
-  char *ch=str;
-  char str2[]="coin";
-  printf("font des\n");
-  font_descriptor_t* fdes = &font_wArial_88;
   
   black_lcd_draw(parlcd_mem_base);
-  
-  for (i=0; i<6; i++) {
-    printf("Draw char %c\n", *ch);
-    draw_char(x, 60, fdes, *ch, game.fb);
-    x+=char_width(fdes, *ch);
-    ch++;
-  }
-  x = 167;
-  ch=str2;
-  for (i=0; i<4; i++) {
-    printf("Draw char %c\n", *ch);
-    draw_char(x, 155, fdes, *ch, game.fb);
-    x+=char_width(fdes, *ch);
-    ch++;
-  }
-  
-  lcd_draw(parlcd_mem_base);
-  
   printf("Goodbye world\n");
 
   return 0;
