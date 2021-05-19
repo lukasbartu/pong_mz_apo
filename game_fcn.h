@@ -46,9 +46,9 @@ ball init_ball();
 
 void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right);
 
-void draw_score(void);
-void goal(int p, unsigned char *mem_base);
+void draw_score(unsigned short *fb, unsigned char *parlcd_mem_base);
+void goal(int p, unsigned char *mem_base, unsigned short *fb, unsigned char *parlcd_mem_base);
 
-void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right);
+void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right, unsigned short *fb, unsigned char *parlcd_mem_base);
 
 #endif
