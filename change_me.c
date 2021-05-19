@@ -1,213 +1,232 @@
+/*******************************************************************
+  Edited template for MZ_APO - paddles acording to knobs - starting 
+  to work with FB and knobs
+
+ *******************************************************************/
+
+#define _POSIX_C_SOURCE 200112L
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
 #include <unistd.h>
-#include <math.h>
 
-
+#include "mzapo_parlcd.h"
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
-#include "font_types.h"
-#include "lcd_text.h"
-#include "utils.h"
-
 #include "game_fcn.h"
+#include "lcd_text.h"
 
-
-#define PADDLE_THICNESS 20 //px
-#define PADDLE_HEIGHT 70   //px
-#define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
-
-/*inicialize paddles to start positions*/
-paddle initLeftpaddle()
-{
-  paddle left_paddle;
-  left_paddle.start = 10;
-  left_paddle.thicness = PADDLE_THICNESS; //basicly constant
-  left_paddle.edge = left_paddle.start + PADDLE_THICNESS;
-  left_paddle.speed = 0;
-  return left_paddle;
-}
-paddle initRightpaddle()
-{
-  paddle right_paddle;
-  right_paddle.start = 440;
-  right_paddle.thicness = PADDLE_THICNESS;
-  right_paddle.edge = right_paddle.start;
-  right_paddle.speed = 0;
-  return right_paddle;
-}
-
-/*spawns ball in random 45° direction on center*/
-ball init_ball()
-{
-  ball ball;
-  ball.dx = 10 * 0.7 * rand_sign();
-  ball.dy = 10 * 0.7 * rand_sign();
-  
-  ball.pos_y = 160;
-  ball.pos_x = 240;
-
-  return ball;
-}
-
-void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right)
-{
-    int oldpos_l = left->position;
-    int oldpos_r = right->position;
-    uint32_t rgb_knobs_value;
-    rgb_knobs_value = *(volatile uint32_t *)(mem_base + SPILED_REG_KNOBS_8BIT_o);
-    printf("rgb_knobs_value %x\n", rgb_knobs_value);  
-
-    uint8_t blue_knob = (uint8_t)(rgb_knobs_value >> 0);
-    uint8_t red_knob = (uint8_t)(rgb_knobs_value >> 16);
-
-    printf("blue knob %x\n", blue_knob);
-    printf("red knob %x\n", red_knob);
-
-    uint16_t relative_left = red_knob * 0x64; //0x64 = 100decimal - rozsireni pro celociselne pocty procent
-    uint16_t relative_right = blue_knob * 0x64;
-    int percent_left = relative_left / KNOB_MAX_VALUE;
-    int percent_right = relative_right / KNOB_MAX_VALUE;
-    printf("percent left %d\n", percent_left);
-    printf("percent right %d\n", percent_right);
-
-    //asign position acordingly to knobs relative value
-    left->position = (320 * percent_left) / 100;
-    right->position = (320 * percent_right) / 100;
-    
-
-    if (left->position <= 35){
-      left->position = 35;
-    }
-    if (right->position <= 35){
-      right->position = 35;
-    }
-    if (left->position >= 285){
-      left->position = 285;
-    }
-    if (right->position >= 285){
-      right->position = 285;
-    }
-    left->position = 160;
-    printf("pos left %d\n", left->position);
-    printf("pos right %d\n", right->position);
-
-  left->speed = (oldpos_l - left->position)/100;
-  right->speed = (oldpos_r - right->position)/100;
-}   
-
-
-void draw_score()
-{
-    printf("font descripption\n");
-    font_descriptor_t* fdes = &font_wArial_88;
-    char ch1 = game.score_p1 + '0'; //coverts score int to char for print
-    char ch2 = '-';
-    char ch3 = game.score_p2 + '0';
-    printf("ch 1: %c, ch 2: %c, ch 3: %c\n", ch1 ,ch2, ch3);
-
-    draw_char(153 , 116, fdes, ch1, game.fb);
-    draw_char(227, 116, fdes, ch2, game.fb);
-    draw_char(283 , 116, fdes, ch3, game.fb);
-}
-
-void goal(int p, unsigned char *mem_base)
-{
-  draw_score();
-  uint32_t colour = 0x00000000;
-  if(p == 1){
-    colour = 0x00D32627; //red
-  }else if(p == 2){
-    colour = 0x000086C0; //blue
-  }
-  
-  for(int i=0; i<5; i++){
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = colour;
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = colour; 
-      usleep(300000);
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00000000; //off
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00000000; //off
-      usleep(300000);
-    }
-
-}
-
+#include "font_types.h"
 
 #define DISPLAY_WIDTH 480
 #define DISPLAY_HEIGHT 320
-void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right)
+
+
+void lcd_draw(unsigned char *parlcd_mem_base)
 {
-  game.goal = 0;
-  printf("check upper and lower bound\n");
-  //check upper and lower bound
-  if(ball->pos_y+19 >= DISPLAY_HEIGHT || ball->pos_y-19 <= 0){
-    ball->dy = ball->dy *-1.0;
+  printf("Draw LCD\n"); //now draw the FB on the screen
+  parlcd_write_cmd(parlcd_mem_base, 0x2c);
+  for (int ptr = 0; ptr < DISPLAY_WIDTH * DISPLAY_HEIGHT; ptr++)
+  {
+    parlcd_write_data(parlcd_mem_base, game.fb[ptr]);
+  }
+  printf("drawn LCD\n");
+}
+
+void black_lcd_draw(unsigned char *parlcd_mem_base)
+{
+  for (int ptr = 0; ptr < 320*480 ; ptr++) {
+    game.fb[ptr]=0x0000; //0u - unsigned int
+  }
+  printf("Draw black LCD\n"); //now draw the FB on the screen
+  parlcd_write_cmd(parlcd_mem_base, 0x2c);
+  for (int ptr = 0; ptr < DISPLAY_WIDTH * DISPLAY_HEIGHT; ptr++)
+  {
+    parlcd_write_data(parlcd_mem_base, game.fb[ptr]);
+  }
+  printf("drawn black LCD\n");
+}
+
+
+
+#define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
+#define PADDLE_HEIGHT 70   //px
+int main(int argc, char *argv[])
+{
+  unsigned char *mem_base;
+  unsigned char *parlcd_mem_base;
+  uint32_t val_line = 5;
+  int i, j;
+  int ptr;
+  printf("alloc FB\n");
+  game.fb = (unsigned short *)malloc(DISPLAY_HEIGHT * DISPLAY_WIDTH * 2); //allocates frame buffer
+  if(!game.fb){
+    exit(2);
+  }
+  printf("Hello world\n");
+  
+  sleep(1);
+
+  /*
+   * Setup memory mapping which provides access to the peripheral
+   * registers region of RGB LEDs, knobs and line of yellow LEDs.
+   */
+  mem_base = map_phys_address(SPILED_REG_BASE_PHYS, SPILED_REG_SIZE, 0);
+  /* If mapping fails exit with error code */
+  if (mem_base == NULL)
+    exit(1);
+
+  struct timespec loop_delay = {.tv_sec = 0, .tv_nsec = 20 * 1000 * 1000};
+  for (i = 0; i < 30; i++)
+  {
+    *(volatile uint32_t *)(mem_base + SPILED_REG_LED_LINE_o) = val_line;
+    val_line <<= 1;
+    printf("LED val 0x%x\n", val_line);
+    clock_nanosleep(CLOCK_MONOTONIC, 0, &loop_delay, NULL);
   }
 
-  printf("check for left - right\n");
-  //check for left - right = goal
-  if(ball->pos_x-19 <= 0){
-    game.score_p2 += 1;
-    printf("goal\n");
-    goal(1, mem_base);
-    game.goal = 1;
-  }
-  if(ball->pos_x+19 >= DISPLAY_WIDTH){
-    game.score_p1 += 1;
-    printf("goal\n");
-    goal(2, mem_base);
-    game.goal = 2;
+  parlcd_mem_base = map_phys_address(PARLCD_REG_BASE_PHYS, PARLCD_REG_SIZE, 0);
+
+  if (parlcd_mem_base == NULL)
+    exit(1);
+
+  parlcd_hx8357_init(parlcd_mem_base);
+
+  parlcd_write_cmd(parlcd_mem_base, 0x2c); //makes clear screen - well, not clear, but inicialize F(rame)B(uffer) to black
+  ptr = 0;
+  for (i = 0; i < DISPLAY_HEIGHT; i++)
+  {
+    for (j = 0; j < DISPLAY_WIDTH; j++)
+    {
+      game.fb[ptr] = 0x0000; //0x0000 = black  /*for colours in hex from rgb - http://www.barth-dev.de/online/rgb565-color-picker/ */
+      parlcd_write_data(parlcd_mem_base, game.fb[ptr++]);
+    }
   }
 
-  printf("collisions with paddles\n");
-  //collisions with paddles
-  if(ball->pos_x-1 <= left->edge 
-  && ball->pos_y >= left->position - (PADDLE_HEIGHT/2) 
-  && ball->pos_y <= left->position + (PADDLE_HEIGHT/2) ){
-    //ball->dx = ball->dx *-1;
-    ball->dy = ball->dy + (10 * left->speed);
-    ball->dx = sqrt( ((100)-(pow(ball->dy,2))) );
-    printf("collied\n");
+  //  font template
+  int x = 95;
+  char str[]="INSERT";
+  char *ch=str;
+  char str2[]="coin";
+  printf("font des\n");
+  font_descriptor_t* fdes = &font_wArial_88;
+  
+  black_lcd_draw(parlcd_mem_base);
+
+  for (i=0; i<6; i++) {
+    printf("Draw char %c\n", *ch);
+    draw_char(x, 60, fdes, *ch, game.fb);
+    x+=char_width(fdes, *ch);
+    ch++;
   }
-  if(ball->pos_x+19 >= right->edge 
-  && ball->pos_y >= right->position - (PADDLE_HEIGHT/2) 
-  && ball->pos_y <= right->position + (PADDLE_HEIGHT/2) ){
-    //ball->dx = ball->dx *-1;
-    ball->dy = ball->dy + (10 * right->speed);
-    ball->dx = sqrt( ((100)-(pow(ball->dy,2))) ) * -1;
-    printf("collied\n");
+  x = 167;
+  ch=str2;
+  for (i=0; i<4; i++) {
+    printf("Draw char %c\n", *ch);
+    draw_char(x, 155, fdes, *ch, game.fb);
+    x+=char_width(fdes, *ch);
+    ch++;
+  }
+  
+  lcd_draw(parlcd_mem_base);
+
+  sleep(1.5);
+  /*
+      * Access register holding 8 bit relative knobs position
+      * The type "(volatile uint32_t*)" casts address obtained
+      * as a sum of base address and register offset to the
+      * pointer type which target in memory type is 32-bit unsigned
+      * integer. The "volatile" keyword ensures that compiler
+      * cannot reuse previously read value of the location.
+      */
+
+  uint32_t rgb_knobs_value;
+  rgb_knobs_value = *(volatile uint32_t *)(mem_base + SPILED_REG_KNOBS_8BIT_o);
+  printf("rgb_knobs_value %x\n", rgb_knobs_value);  
+
+
+  /* Store the read value to the register controlling individual LEDs */
+  *(volatile uint32_t *)(mem_base + SPILED_REG_LED_LINE_o) = rgb_knobs_value;
+  uint32_t led_rgb = *(volatile uint32_t *)(mem_base + SPILED_REG_LED_RGB1_o);
+  printf("rgb val %x\n", led_rgb);  
+
+  *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00B5CEB1;
+
+  /* use this way to split data in register to bytes 
+    uint32 tmp;
+    uint8 b3 = (uint8)(tmp>>24); 
+    uint8 b2 = (uint8)(tmp>>16); 
+    uint8 b1 = (uint8)(tmp>>8); 
+    uint8 b0 = (uint8)(tmp>>0);*/
+
+  //splits knobs value to two variables
+  
+  paddle left_paddle = initLeftpaddle();   //init
+  paddle right_paddle = initRightpaddle(); //init
+  ball ball = init_ball();
+
+  int n=0;
+  while(n<=200){
+    printf("while n:%d\n", n);
+    black_lcd_draw(parlcd_mem_base);
+    update_paddle_position(mem_base, &left_paddle , &right_paddle);
+    update_ball(mem_base, &ball, &left_paddle, &right_paddle);
+
+  left_paddle.offset = DISPLAY_WIDTH * (left_paddle.position - (PADDLE_HEIGHT / 2)); //set offset acording to position
+  right_paddle.offset = DISPLAY_WIDTH * (right_paddle.position - (PADDLE_HEIGHT / 2));
+
+  for (int y = left_paddle.offset + left_paddle.start;
+       y < left_paddle.offset + left_paddle.start + (PADDLE_HEIGHT * DISPLAY_WIDTH);
+       y += DISPLAY_WIDTH)
+  { //increment 90 lines of height
+    for (int x = 0; x < left_paddle.thicness; x++)
+    {                     //increment 30px width - starts at left offset
+      game.fb[y + x] = 0xFC1F; //make box of pink (I like pink, white will be eventually)
+      //printf("FB y- %d; x- %d \n", y, x); //just to see what is the hell going on
+    }
   }
 
-  //move ball
-  if(game.goal){  //sets ball to one of the players with random direction
-    ball->dy = 10 * 0.7 * rand_sign();
-    if(game.goal==1){
-      ball->pos_y = left->position;
-      ball->pos_x = 70;
-      ball->dx = 10 * 0.7;
-    }else if(game.goal==2){
-      ball->pos_y = right->position;
-      ball->pos_x = 410;
-      ball->dx = -10 * 0.7;
+  for (int y = right_paddle.offset + right_paddle.start;
+       y < right_paddle.offset + right_paddle.start + (PADDLE_HEIGHT * DISPLAY_WIDTH);
+       y += DISPLAY_WIDTH)
+  { //increment 90 lines of height
+    for (int x = 0; x < right_paddle.thicness; x++)
+    {                     //increment 30px width - starts at left offset
+      game.fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
+      //printf("FB y- %d; x- %d \n", y, x);
     }
-  }else{  //no goal, just move ball
-    ball->pos_x += ball->dx;
-    ball->pos_y += ball->dy;
   }
 
-  if (ball->pos_x <= 0){
-      ball->pos_x = 0;
-    }
-    if (ball->pos_y <= 18){
-      ball->pos_y = 18;
-    }
-    if (ball->pos_x >= 462){
-      ball->pos_x = 462;
-    }
-    if (ball->pos_y >= 302){
-      ball->pos_y = 302;
-    }
-    printf("pos ball x%d ,y%d; smer: dx%f, dy%f\n", ball->pos_x, ball->pos_y, ball->dx, ball->dy);
+  //ball to fb
+  ball.offset = DISPLAY_WIDTH * (ball.pos_y - (18 / 2)); // 18x18px ball 
 
+    for (int y = ball.offset + (ball.pos_x-(18/2));
+        y < ball.offset + (ball.pos_x-(18/2)) + (18 * DISPLAY_WIDTH);
+        y += DISPLAY_WIDTH)
+    { //increment 90 lines of height
+      for (int x = 0; x < 18; x++)
+      {                     //increment 30px width - starts at left offset
+        game.fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
+        //printf("FB y- %d; x- %d \n", y, x);
+      }
+    }
+    n++;
+
+    lcd_draw(parlcd_mem_base);
+    
+  }
+
+
+
+  lcd_draw(parlcd_mem_base);
+  sleep(5);
+  /*end of drawing paddles*/
+
+  
+  black_lcd_draw(parlcd_mem_base);
+  printf("Goodbye world\n");
+
+  return 0;
 }
