@@ -114,29 +114,22 @@ void draw_score()
 
 void goal(int p, unsigned char *mem_base)
 {
+  draw_score();
+  uint32_t colour = 0x00000000;
   if(p == 1){
-    //draw_score();
-    
-    for(int i=0; i<5; i++){
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x000086C0; //blue
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x000086C0; //blue
-      usleep(300000);
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00000000; //off
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00000000; //off
-      usleep(300000);
-    }
+    colour = 0x00D32627; //red
   }else if(p == 2){
-    //draw_score();
-
-    for(int i=0; i<5; i++){
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00D32627; //red
-      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00D32627; //red
+    colour = 0x000086C0; //blue
+  }
+  
+  for(int i=0; i<5; i++){
+      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = colour;
+      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = colour; 
       usleep(300000);
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00000000; //off
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00000000; //off
       usleep(300000);
     }
-  }
 
 }
 
