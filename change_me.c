@@ -24,22 +24,32 @@
 #define DISPLAY_HEIGHT 320
 
 
-#define PADDLE_THICNESS 30 //px
-
 void lcd_draw(unsigned char *parlcd_mem_base)
 {
   printf("Draw LCD\n"); //now draw the FB on the screen
   parlcd_write_cmd(parlcd_mem_base, 0x2c);
   for (int ptr = 0; ptr < DISPLAY_WIDTH * DISPLAY_HEIGHT; ptr++)
   {
-    parlcd_write_data(parlcd_mem_base, game->fb[ptr]);
+    parlcd_write_data(parlcd_mem_base, game.fb[ptr]);
+  }
+  printf("drawn LCD\n");
+}
+
+void black_lcd_draw(unsigned char *parlcd_mem_base)
+{
+  printf("Draw LCD\n"); //now draw the FB on the screen
+  parlcd_write_cmd(parlcd_mem_base, 0x2c);
+  for (int ptr = 0; ptr < DISPLAY_WIDTH * DISPLAY_HEIGHT; ptr++)
+  {
+    parlcd_write_data(parlcd_mem_base, game.black_fb[ptr]);
   }
   printf("drawn LCD\n");
 }
 
 
-#define PADDLE_HEIGHT 90   //px
+
 #define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
+#define PADDLE_HEIGHT 70   //px
 int main(int argc, char *argv[])
 {
   unsigned char *mem_base;
@@ -48,12 +58,15 @@ int main(int argc, char *argv[])
   int i, j;
   int ptr;
   printf("alloc FB\n");
-  game->fb = (unsigned short *)malloc(DISPLAY_HEIGHT * DISPLAY_WIDTH * 2); //allocates frame buffer
-  if(!game->fb){
-    exit(1);
+  game.fb = (unsigned short *)malloc(DISPLAY_HEIGHT * DISPLAY_WIDTH * 2); //allocates frame buffer
+  game.black_fb = (unsigned short *)malloc(DISPLAY_HEIGHT * DISPLAY_WIDTH * 2); //allocates frame buffer for balk screen
+  if(!game.fb || !game.black_fb){
+    exit(2);
   }
   printf("Hello world\n");
-
+  for (ptr = 0; ptr < 320*480 ; ptr++) {
+    game.black_fb[ptr]=0x0000; //0u - unsigned int
+  }
   sleep(1);
 
   /*
@@ -87,8 +100,8 @@ int main(int argc, char *argv[])
   {
     for (j = 0; j < DISPLAY_WIDTH; j++)
     {
-      game->fb[ptr] = 0x0000; //0x0000 = black  /*for colours in hex from rgb - http://www.barth-dev.de/online/rgb565-color-picker/ */
-      parlcd_write_data(parlcd_mem_base, fb[ptr++]);
+      game.fb[ptr] = 0x0000; //0x0000 = black  /*for colours in hex from rgb - http://www.barth-dev.de/online/rgb565-color-picker/ */
+      parlcd_write_data(parlcd_mem_base, game.fb[ptr++]);
     }
   }
 
@@ -137,7 +150,7 @@ int main(int argc, char *argv[])
   { //increment 90 lines of height
     for (int x = 0; x < left_paddle.thicness; x++)
     {                     //increment 30px width - starts at left offset
-      game->fb[y + x] = 0xFC1F; //make box of pink (I like pink, white will be eventually)
+      game.fb[y + x] = 0xFC1F; //make box of pink (I like pink, white will be eventually)
       //printf("FB y- %d; x- %d \n", y, x); //just to see what is the hell going on
     }
   }
@@ -148,13 +161,38 @@ int main(int argc, char *argv[])
   { //increment 90 lines of height
     for (int x = 0; x < right_paddle.thicness; x++)
     {                     //increment 30px width - starts at left offset
-      game->fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
+      game.fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
       //printf("FB y- %d; x- %d \n", y, x);
     }
   }
 
-  lcd_draw(parlcd_mem_base);
+  //ball to fb
 
+  ball ball = init_ball();
+  
+  ball.offset = DISPLAY_WIDTH * (ball.pos_y - (18 / 2)); // 18x18px ball 
+
+  int n;
+  while(n<=10){
+    for (int y = ball.offset + (ball.pos_x-(18/2));
+        y < ball.offset + (ball.pos_x-(18/2)) + (18 * DISPLAY_WIDTH);
+        y += DISPLAY_WIDTH)
+    { //increment 90 lines of height
+      for (int x = 0; x < 18; x++)
+      {                     //increment 30px width - starts at left offset
+        game.fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
+        //printf("FB y- %d; x- %d \n", y, x);
+      }
+    }
+    n++;
+    lcd_draw(parlcd_mem_base);
+    update_ball(mem_base, &ball, &left_paddle, &right_paddle);
+  }
+
+
+
+  lcd_draw(parlcd_mem_base);
+  sleep(5);
   /*end of drawing paddles*/
 
   //  font template
@@ -165,12 +203,11 @@ int main(int argc, char *argv[])
   printf("font des\n");
   font_descriptor_t* fdes = &font_wArial_88;
   
-  for (ptr = 0; ptr < 320*480 ; ptr++) {
-    fb[ptr]=0x0000; //0u - unsigned int
-  }
+  black_lcd_draw(parlcd_mem_base);
+  
   for (i=0; i<6; i++) {
     printf("Draw char %c\n", *ch);
-    draw_char(x, 60, fdes, *ch, game->fb);
+    draw_char(x, 60, fdes, *ch, game.fb);
     x+=char_width(fdes, *ch);
     ch++;
   }
@@ -178,7 +215,7 @@ int main(int argc, char *argv[])
   ch=str2;
   for (i=0; i<4; i++) {
     printf("Draw char %c\n", *ch);
-    draw_char(x, 155, fdes, *ch, game->fb);
+    draw_char(x, 155, fdes, *ch, game.fb);
     x+=char_width(fdes, *ch);
     ch++;
   }
