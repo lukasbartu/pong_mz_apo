@@ -1,4 +1,3 @@
-#include <stdio.h>
 
 #include "lcd_text.h"
 
@@ -6,15 +5,14 @@
 #define DISPLAY_HEIGHT 320
 
 void draw_pixel(int x, int y, unsigned short color, unsigned short *fb)
-{ //self explanatory
+{ //self explanatory, not yet used
   if (x >= 0 && x < DISPLAY_WIDTH && y >= 0 && y < DISPLAY_HEIGHT)
   {
-    printf("write pixel to buffer\n");
     fb[x + DISPLAY_WIDTH * y] = color;
   }
 }
 
-void draw_char(int x, int y, font_descriptor_t *fdes, char ch, unsigned short *fb)
+void draw_char(int x, int y, font_descriptor_t *fdes, char ch, unsigned int color, unsigned short *fb)
 { 
   int nmbr = (int)ch - fdes->firstchar;//44;
   if(nmbr>fdes->size){
@@ -43,7 +41,7 @@ void draw_char(int x, int y, font_descriptor_t *fdes, char ch, unsigned short *f
             //printf("x %d, y %d\n", x+j, y+i);
             if(( (z & 0x8000) >> 15 ) == 1){
               //printf("x %d; y %d\n",x_tmp , y+line);
-              draw_pixel(x_tmp, y+line,0xFFFF, fb);
+              draw_pixel(x_tmp, y+line, color, fb);
             }
             x_tmp++;
             z <<= 1;
@@ -54,7 +52,7 @@ void draw_char(int x, int y, font_descriptor_t *fdes, char ch, unsigned short *f
             x_tmp = x;
         }
     }
-  printf("char written\n");
+  //printf("I have temp\n");
 
 }
 
@@ -74,4 +72,32 @@ int char_width(font_descriptor_t *fdes, int ch)
     }
   }
   return width;
+}
+
+void draw_string(int x, int y, char *string,  int length, unsigned int color, font_descriptor_t *fdes, unsigned short *fb){
+  char *ch = string;
+  for (int i=0; i<length; i++) {
+    printf("Draw char %c\n", *ch);
+    draw_char(x, y, fdes, *ch, color, fb);
+    x+=char_width(fdes, *ch);
+    ch++;
+  }
+}
+
+void lcd_draw(unsigned char *parlcd_mem_base, unsigned short *fb)
+{
+  printf("Draw LCD\n");
+  parlcd_write_cmd(parlcd_mem_base, 0x2c);
+  for (int ptr = 0; ptr < DISPLAY_WIDTH * DISPLAY_HEIGHT; ptr++)
+  {
+    parlcd_write_data(parlcd_mem_base, fb[ptr]);
+  }
+  printf("Drawn LCD\n");
+}
+
+
+void frame_buffer_clear(unsigned short *fb){
+  for (int ptr = 0; ptr < 320*480 ; ptr++) {
+    fb[ptr]=0x0000; //0u - unsigned int
+  }
 }
