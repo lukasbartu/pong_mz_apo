@@ -12,6 +12,7 @@ typedef struct
   int offset;   //offset of position from top for frame buffer
   int position; //position of paddle
   int edge;
+  float speed;
 } paddle;
 
 typedef struct {
@@ -22,26 +23,29 @@ typedef struct {
   float dy;
   float dx;
   bool collided;
+  int offset;
 } ball;
 
 static struct {
   unsigned short *fb;
+  unsigned short *black_fb;
 
   int score_p1;
   int score_p2;
   
-  bool goal;
+  int goal;
 } game = {
   .score_p1 = 0,
   .score_p2 = 0,
 
-  .goal = false;
+  .goal = 0;
 };
 
 paddle initLeftpaddle();
 paddle initRightpaddle();
+ball init_ball();
 
-void update_paddle_position(unsigned char *mem_base, int* pos_l , int* pos_r);
+void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right);
 
 void draw_score(void);
 void goal(int p, unsigned char *mem_base);
