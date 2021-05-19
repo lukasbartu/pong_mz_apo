@@ -8,9 +8,11 @@
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
 #include "game_fcn.h"
+#include "game.h"
 #include "lcd_text.h"
 #include "colors.h"
 #include "font_types.h"
+#include "utils.h"
 
 
 #define DISPLAY_WIDTH 480
@@ -72,7 +74,7 @@ int main(int argc, char *argv[])
 
     // start of menu screen ----------------------------------------------------------
     draw_string(105,15,"MENU",4,YELLOW_COLOR,fdes88,game.fb);
-    draw_string(10,100,"Standard mode",13,BLUE_COLOR,fdes44,game.fb); // option 0
+    draw_string(30,100,"Standard mode",13,BLUE_COLOR,fdes44,game.fb); // option 0
     draw_string(10,140,"Speed mode",10,YELLOW_COLOR,fdes44,game.fb);  // option 1
     draw_string(10,180,"Arcade mode",11,YELLOW_COLOR,fdes44,game.fb); // option 2
     lcd_draw(parlcd_mem_base, game.fb);
@@ -80,7 +82,7 @@ int main(int argc, char *argv[])
 
     char c;
     int option = 0;
-    while((c = getchar()) != 'q'){
+    while((c = getch()) != 'q'){
         switch (c)
         {
         case '-': // menu up
@@ -97,27 +99,38 @@ int main(int argc, char *argv[])
                 option = option +1; 
             }
             break;
+        case 0x0A: // enter
+            if(option == 0){
+                keyboard_game(mem_base, parlcd_mem_base, game.fb);
+            }
+            break;
         default:
             break;
         }
         switch (option)
         {
         case 0: // option 0 selected
-            draw_string(10,100,"Standard mode",13,BLUE_COLOR,fdes44,game.fb); // option 0
+            frame_buffer_clear(game.fb);
+            draw_string(105,15,"MENU",4,YELLOW_COLOR,fdes88,game.fb);
+            draw_string(30,100,"Standard mode",13,BLUE_COLOR,fdes44,game.fb); // option 0
             draw_string(10,140,"Speed mode",10,YELLOW_COLOR,fdes44,game.fb);  // option 1
             draw_string(10,180,"Arcade mode",11,YELLOW_COLOR,fdes44,game.fb); // option 2
             lcd_draw(parlcd_mem_base, game.fb);
             break;
         case 1: // option 1 selected
+            frame_buffer_clear(game.fb);
+            draw_string(105,15,"MENU",4,YELLOW_COLOR,fdes88,game.fb);
             draw_string(10,100,"Standard mode",13,YELLOW_COLOR,fdes44,game.fb); // option 0
-            draw_string(10,140,"Speed mode",10,BLUE_COLOR,fdes44,game.fb);  // option 1   
+            draw_string(30,140,"Speed mode",10,BLUE_COLOR,fdes44,game.fb);  // option 1   
             draw_string(10,180,"Arcade mode",11,YELLOW_COLOR,fdes44,game.fb); // option 2 
             lcd_draw(parlcd_mem_base, game.fb); 
             break;
         case 2: // option 2 selected
+            frame_buffer_clear(game.fb);
+            draw_string(105,15,"MENU",4,YELLOW_COLOR,fdes88,game.fb);
             draw_string(10,100,"Standard mode",13,YELLOW_COLOR,fdes44,game.fb); // option 0
             draw_string(10,140,"Speed mode",10,YELLOW_COLOR,fdes44,game.fb);  // option 1
-            draw_string(10,180,"Arcade mode",11,BLUE_COLOR,fdes44,game.fb); // option 2
+            draw_string(30,180,"Arcade mode",11,BLUE_COLOR,fdes44,game.fb); // option 2
             lcd_draw(parlcd_mem_base, game.fb);
             break;
         default:
@@ -130,6 +143,9 @@ int main(int argc, char *argv[])
     lcd_draw(parlcd_mem_base, game.fb);
 // end of menu screen ------------------------------------------------------------
 
+    if(game.fb){
+        free(game.fb);
+    }
     printf("Goodbye world\n");
 
   return 0;
