@@ -89,7 +89,6 @@ void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right
     if (right->position >= 285){
       right->position = 285;
     }
-    left->position = 160;
     printf("pos left %d\n", left->position);
     printf("pos right %d\n", right->position);
 
@@ -97,8 +96,7 @@ void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right
   right->speed = (oldpos_r - right->position)/100;
 }   
 
-
-void draw_score()
+void draw_score(unsigned short *fb, unsigned char *parlcd_mem_base)
 {
     printf("font descripption\n");
     font_descriptor_t* fdes = &font_wArial_88;
@@ -107,14 +105,15 @@ void draw_score()
     char ch3 = game.score_p2 + '0';
     printf("ch 1: %c, ch 2: %c, ch 3: %c\n", ch1 ,ch2, ch3);
 
-    draw_char(153 , 116, fdes, ch1, game.fb);
-    draw_char(227, 116, fdes, ch2, game.fb);
-    draw_char(283 , 116, fdes, ch3, game.fb);
+    draw_char(153 , 116, fdes, ch1, WHITE_COLOR, fb);
+    draw_char(227, 116, fdes, ch2, WHITE_COLOR, fb);
+    draw_char(283 , 116, fdes, ch3, WHITE_COLOR, fb);
+    lcd_draw(parlcd_mem_base, fb);
 }
 
-void goal(int p, unsigned char *mem_base)
+void goal(int p, unsigned char *mem_base, unsigned short *fb, unsigned char *parlcd_mem_base)
 {
-  draw_score();
+  draw_score(fb, parlcd_mem_base);
   uint32_t colour = 0x00000000;
   if(p == 1){
     colour = 0x00D32627; //red
@@ -136,7 +135,7 @@ void goal(int p, unsigned char *mem_base)
 
 #define DISPLAY_WIDTH 480
 #define DISPLAY_HEIGHT 320
-void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right)
+void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right, unsigned short *fb, unsigned char *parlcd_mem_base)
 {
   game.goal = 0;
   printf("check upper and lower bound\n");
@@ -150,13 +149,13 @@ void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *righ
   if(ball->pos_x-19 <= 0){
     game.score_p2 += 1;
     printf("goal\n");
-    goal(1, mem_base);
+    goal(1, mem_base, fb, parlcd_mem_base);
     game.goal = 1;
   }
   if(ball->pos_x+19 >= DISPLAY_WIDTH){
     game.score_p1 += 1;
     printf("goal\n");
-    goal(2, mem_base);
+    goal(2, mem_base, fb, parlcd_mem_base);
     game.goal = 2;
   }
 
