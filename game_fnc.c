@@ -42,8 +42,8 @@ paddle initRightpaddle()
 ball init_ball()
 {
   ball ball;
-  ball.dx = 10 * 0.7 * rand_sign();
-  ball.dy = 10 * 0.7 * rand_sign();
+  ball.dx = 5 * 0.7 * rand_sign();
+  ball.dy = 5 * 0.7 * rand_sign();
   
   ball.pos_y = 160;
   ball.pos_x = 240;
@@ -166,7 +166,7 @@ void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *righ
   && ball->pos_y <= left->position + (PADDLE_HEIGHT/2) ){
     //ball->dx = ball->dx *-1;
     ball->dy = ball->dy + (10 * left->speed);
-    ball->dx = sqrt( ((100)-(pow(ball->dy,2))) );
+    ball->dx = sqrt( ((25)-(pow(ball->dy,2))) );
     printf("collied\n");
   }
   if(ball->pos_x+19 >= right->edge 
@@ -174,21 +174,21 @@ void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *righ
   && ball->pos_y <= right->position + (PADDLE_HEIGHT/2) ){
     //ball->dx = ball->dx *-1;
     ball->dy = ball->dy + (10 * right->speed);
-    ball->dx = sqrt( ((100)-(pow(ball->dy,2))) ) * -1;
+    ball->dx = sqrt( ((25)-(pow(ball->dy,2))) ) * -1;
     printf("collied\n");
   }
 
   //move ball
   if(game.goal){  //sets ball to one of the players with random direction
-    ball->dy = 10 * 0.7 * rand_sign();
+    ball->dy = 5 * 0.7 * rand_sign();
     if(game.goal==1){
       ball->pos_y = left->position;
       ball->pos_x = 70;
-      ball->dx = 10 * 0.7;
+      ball->dx = 5 * 0.7;
     }else if(game.goal==2){
       ball->pos_y = right->position;
       ball->pos_x = 410;
-      ball->dx = -10 * 0.7;
+      ball->dx = -5 * 0.7;
     }
   }else{  //no goal, just move ball
     ball->pos_x += ball->dx;
