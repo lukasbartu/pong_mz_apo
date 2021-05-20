@@ -1,20 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <unistd.h>
-
-#include "game_fnc.h"
-
 #include "game.h"
-#include "utils.h"
-#include "lcd_text.h"
 
-#define DISPLAY_WIDTH 480
-#define DISPLAY_HEIGHT 320
-
-#define PADDLE_HEIGHT 70
-
-void keyboard_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned short *fb)
+void keyboard_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned short *fb, settings_struct *settings)
 {
     bool quit = false;
     paddle left_paddle = initLeftpaddle();   //init
@@ -87,7 +73,7 @@ void keyboard_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsi
              y += DISPLAY_WIDTH)
         { //increment 90 lines of height
             for (int x = 0; x < left_paddle.thicness; x++){                       //increment 30px width - starts at left offset
-                fb[y + x] = 0xFC1F; //make box of pink (I like pink, white will be eventually)
+                fb[y + x] = settings->player_one_color; //color according to settings (default is PINK)
             }
         }
 
@@ -96,7 +82,7 @@ void keyboard_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsi
              y += DISPLAY_WIDTH)
         { //increment 90 lines of height
             for (int x = 0; x < right_paddle.thicness; x++){                       //increment 30px width - starts at left offset
-                fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
+                fb[y + x] = settings->player_two_color; //color according to settings (default is PINK)
             }
         }
 
@@ -116,7 +102,7 @@ void keyboard_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsi
     }
 }
 
-void knob_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned short *fb)
+void knob_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned short *fb, settings_struct *settings)
 {
     paddle left_paddle = initLeftpaddle();   //init
     paddle right_paddle = initRightpaddle(); //init
@@ -144,7 +130,7 @@ void knob_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned
              y += DISPLAY_WIDTH)
         { //increment 90 lines of height
             for (int x = 0; x < left_paddle.thicness; x++){                       //increment 30px width - starts at left offset
-                fb[y + x] = 0xFC1F; //make box of pink (I like pink, white will be eventually)
+                fb[y + x] = settings->player_one_color; //color according to settings (default is PINK)
             }
         }
 
@@ -153,7 +139,7 @@ void knob_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned
              y += DISPLAY_WIDTH)
         { //increment 90 lines of height
             for (int x = 0; x < right_paddle.thicness; x++){                       //increment 30px width - starts at left offset
-                fb[y + x] = 0x801F; //make box of purple (at the end we will have rainbow)
+                fb[y + x] = settings->player_two_color; //color according to settings (default is PINK)
             }
         }
 
