@@ -7,9 +7,9 @@ CXXFLAGS = -g -std=gnu++11 -O1 -Wall
 LDFLAGS = -lrt -lpthread
 LDLIBS = -lm
 
-SOURCES = main.c mzapo_phys.c mzapo_parlcd.c game_fnc.c lcd_text.c utils.c game.c
+SOURCES = main.c mzapo_phys.c mzapo_parlcd.c game_fnc.c lcd_text.c utils.c game.c menus.c
 SOURCES += font_prop14x16.c font_rom8x16.c wArial_88.c wArial_44.c
-TARGET_EXE = change_me
+TARGET_EXE = main
 #TARGET_IP ?= 192.168.202.127
 ifeq ($(TARGET_IP),)
 ifneq ($(filter debug run,$(MAKECMDGOALS)),)
