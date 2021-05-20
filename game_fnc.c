@@ -11,7 +11,7 @@
 #include "lcd_text.h"
 #include "utils.h"
 
-#include "game_fcn.h"
+#include "game_fnc.h"
 
 
 #define PADDLE_THICNESS 20 //px

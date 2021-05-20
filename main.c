@@ -8,7 +8,7 @@
 #include "mzapo_parlcd.h"
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
-#include "game_fcn.h"
+#include "game_fnc.h"
 #include "game.h"
 #include "lcd_text.h"
 #include "colors.h"

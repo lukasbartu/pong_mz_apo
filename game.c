@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#include "game_fcn.h"
+#include "game_fnc.h"
 
 #include "game.h"
 #include "utils.h"
