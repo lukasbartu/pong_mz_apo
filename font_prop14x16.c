@@ -8301,7 +8301,7 @@ static font_bits_t winFreeSystem14x16_bits[] = {
 
 };
 
-#if 0000
+
 /* Character->glyph data. */
 static uint32_t winFreeSystem14x16_offset[] = {
   0,	 /*   (0x20) */
@@ -8529,7 +8529,7 @@ static uint32_t winFreeSystem14x16_offset[] = {
   3552,	 /* � (0xfe) */
   3568,	 /* � (0xff) */
 };
-#endif
+
 
 /* Character width data. */
 static unsigned char winFreeSystem14x16_width[] = {
@@ -8768,6 +8768,6 @@ font_descriptor_t font_winFreeSystem14x16 = {
 	32,
 	224,
 	winFreeSystem14x16_bits,
-	0 /*winFreeSystem14x16_offset*/,
+	winFreeSystem14x16_offset, /*winFreeSystem14x16_offset*/,
 	winFreeSystem14x16_width,
 };
