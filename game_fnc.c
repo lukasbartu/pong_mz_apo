@@ -1,22 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <math.h>
-
-
-#include "mzapo_phys.h"
-#include "mzapo_regs.h"
-#include "font_types.h"
-#include "lcd_text.h"
-#include "utils.h"
-
 #include "game_fnc.h"
-
-
-#define PADDLE_THICNESS 20 //px
-#define PADDLE_HEIGHT 70   //px
-#define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
 
 /*inicialize paddles to start positions*/
 paddle initLeftpaddle()

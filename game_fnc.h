@@ -1,7 +1,23 @@
-#ifndef GAME_FCN_H
-#define GAME_FCN_H
+#ifndef GAME_FNC_H
+#define GAME_FNC_H
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <math.h>
+
+#include "mzapo_phys.h"
+#include "mzapo_regs.h"
+#include "font_types.h"
+#include "lcd_text.h"
+#include "utils.h"
+
+
+#define PADDLE_THICNESS 20 //px
+#define PADDLE_HEIGHT 70   //px
+#define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
 
 
 /*paddle struct - carries information about player's paddle*/
