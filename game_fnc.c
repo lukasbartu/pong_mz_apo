@@ -1,154 +1,212 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <time.h>
 #include <unistd.h>
+#include <math.h>
 
-#include "mzapo_parlcd.h"
+
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
-#include "game_fcn.h"
-#include "game.h"
-#include "lcd_text.h"
-#include "colors.h"
 #include "font_types.h"
+#include "lcd_text.h"
 #include "utils.h"
+
+#include "game_fcn.h"
+
+
+#define PADDLE_THICNESS 20 //px
+#define PADDLE_HEIGHT 70   //px
+#define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
+
+/*inicialize paddles to start positions*/
+paddle initLeftpaddle()
+{
+  paddle left_paddle;
+  left_paddle.start = 10;
+  left_paddle.thicness = PADDLE_THICNESS; //basicly constant
+  left_paddle.edge = left_paddle.start + PADDLE_THICNESS;
+  left_paddle.speed = 0;
+  return left_paddle;
+}
+paddle initRightpaddle()
+{
+  paddle right_paddle;
+  right_paddle.start = 440;
+  right_paddle.thicness = PADDLE_THICNESS;
+  right_paddle.edge = right_paddle.start;
+  right_paddle.speed = 0;
+  return right_paddle;
+}
+
+/*spawns ball in random 45° direction on center*/
+ball init_ball()
+{
+  ball ball;
+  ball.dx = 5 * 0.7 * rand_sign();
+  ball.dy = 5 * 0.7 * rand_sign();
+  
+  ball.pos_y = 160;
+  ball.pos_x = 240;
+
+  return ball;
+}
+
+void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right)
+{
+    int oldpos_l = left->position;
+    int oldpos_r = right->position;
+    uint32_t rgb_knobs_value;
+    rgb_knobs_value = *(volatile uint32_t *)(mem_base + SPILED_REG_KNOBS_8BIT_o);
+    printf("rgb_knobs_value %x\n", rgb_knobs_value);  
+
+    uint8_t blue_knob = (uint8_t)(rgb_knobs_value >> 0);
+    uint8_t red_knob = (uint8_t)(rgb_knobs_value >> 16);
+
+    printf("blue knob %x\n", blue_knob);
+    printf("red knob %x\n", red_knob);
+
+    uint16_t relative_left = red_knob * 0x64; //0x64 = 100decimal - rozsireni pro celociselne pocty procent
+    uint16_t relative_right = blue_knob * 0x64;
+    int percent_left = relative_left / KNOB_MAX_VALUE;
+    int percent_right = relative_right / KNOB_MAX_VALUE;
+    printf("percent left %d\n", percent_left);
+    printf("percent right %d\n", percent_right);
+
+    //asign position acordingly to knobs relative value
+    left->position = (320 * percent_left) / 100;
+    right->position = (320 * percent_right) / 100;
+    
+
+    if (left->position <= 35){
+      left->position = 35;
+    }
+    if (right->position <= 35){
+      right->position = 35;
+    }
+    if (left->position >= 285){
+      left->position = 285;
+    }
+    if (right->position >= 285){
+      right->position = 285;
+    }
+    printf("pos left %d\n", left->position);
+    printf("pos right %d\n", right->position);
+
+  left->speed = (oldpos_l - left->position)/100;
+  right->speed = (oldpos_r - right->position)/100;
+}   
+
+void draw_score(unsigned short *fb, unsigned char *parlcd_mem_base, game *game)
+{
+    printf("font descripption\n");
+    font_descriptor_t* fdes = &font_wArial_88;
+    char ch1 = game->score_p1 + '0'; //coverts score int to char for print
+    char ch2 = '-';
+    char ch3 = game->score_p2 + '0';
+    printf("ch 1: %c, ch 2: %c, ch 3: %c\n", ch1 ,ch2, ch3);
+
+    draw_char(153 , 116, fdes, ch1, WHITE_COLOR, fb);
+    draw_char(227, 116, fdes, ch2, WHITE_COLOR, fb);
+    draw_char(283 , 116, fdes, ch3, WHITE_COLOR, fb);
+    lcd_draw(parlcd_mem_base, fb);
+}
+
+void goal(int p, unsigned char *mem_base, unsigned short *fb, unsigned char *parlcd_mem_base, game *game)
+{
+  draw_score(fb, parlcd_mem_base, game);
+  uint32_t colour = 0x00000000;
+  if(p == 1){
+    colour = 0x00D32627; //red
+  }else if(p == 2){
+    colour = 0x000086C0; //blue
+  }
+  
+  for(int i=0; i<5; i++){
+      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = colour;
+      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = colour; 
+      usleep(300000);
+      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = 0x00000000; //off
+      *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00000000; //off
+      usleep(300000);
+    }
+
+}
 
 
 #define DISPLAY_WIDTH 480
 #define DISPLAY_HEIGHT 320
-
-int main(int argc, char *argv[])
+void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right, unsigned short *fb, unsigned char *parlcd_mem_base, game *game)
 {
-    unsigned char *mem_base;
-    unsigned char *parlcd_mem_base;
-    uint32_t val_line = 5;
-    printf("Alloc FB\n");
-    game.fb = (unsigned short *)malloc(DISPLAY_HEIGHT * DISPLAY_WIDTH * 2); //allocates frame buffer
-    if(!game.fb){
-        exit(1);
+  game->goal = 0;
+  printf("check upper and lower bound\n");
+  //check upper and lower bound
+  if(ball->pos_y+19 >= DISPLAY_HEIGHT || ball->pos_y-19 <= 0){
+    ball->dy = ball->dy *-1.0;
+  }
+
+  printf("check for left - right\n");
+  //check for left - right = goal
+  if(ball->pos_x-19 <= 0){
+    game->score_p2 += 1;
+    printf("goal\n");
+    goal(1, mem_base, fb, parlcd_mem_base, game);
+    game->goal = 1;
+  }
+  if(ball->pos_x+19 >= DISPLAY_WIDTH){
+    game->score_p1 += 1;
+    printf("goal\n");
+    goal(2, mem_base, fb, parlcd_mem_base, game);
+    game->goal = 2;
+  }
+
+  printf("collisions with paddles\n");
+  //collisions with paddles
+  if(ball->pos_x-1 <= left->edge 
+  && ball->pos_y >= left->position - (PADDLE_HEIGHT/2) 
+  && ball->pos_y <= left->position + (PADDLE_HEIGHT/2) ){
+    //ball->dx = ball->dx *-1;
+    ball->dy = ball->dy + (10 * left->speed);
+    ball->dx = sqrt( ((25)-(pow(ball->dy,2))) );
+    printf("collied\n");
+  }
+  if(ball->pos_x+19 >= right->edge 
+  && ball->pos_y >= right->position - (PADDLE_HEIGHT/2) 
+  && ball->pos_y <= right->position + (PADDLE_HEIGHT/2) ){
+    //ball->dx = ball->dx *-1;
+    ball->dy = ball->dy + (10 * right->speed);
+    ball->dx = sqrt( ((25)-(pow(ball->dy,2))) ) * -1;
+    printf("collied\n");
+  }
+
+  //move ball
+  if(game->goal){  //sets ball to one of the players with random direction
+    ball->dy = 5 * 0.7 * rand_sign();
+    if(game->goal==1){
+      ball->pos_y = left->position;
+      ball->pos_x = 70;
+      ball->dx = 5 * 0.7;
+    }else if(game->goal==2){
+      ball->pos_y = right->position;
+      ball->pos_x = 410;
+      ball->dx = -5 * 0.7;
     }
-    printf("Hello world\n");
+  }else{  //no goal, just move ball
+    ball->pos_x += ball->dx;
+    ball->pos_y += ball->dy;
+  }
 
-    sleep(1);
-
-  /*
-   * Setup memory mapping which provides access to the peripheral
-   * registers region of RGB LEDs, knobs and line of yellow LEDs.
-   */
-    mem_base = map_phys_address(SPILED_REG_BASE_PHYS, SPILED_REG_SIZE, 0);
-  /* If mapping fails exit with error code */
-    if (mem_base == NULL)
-        exit(1);
-
-    struct timespec loop_delay = {.tv_sec = 0, .tv_nsec = 20 * 1000 * 1000};
-    for (int i = 0; i < 30; i++)
-    {
-        *(volatile uint32_t *)(mem_base + SPILED_REG_LED_LINE_o) = val_line;
-        val_line <<= 1;
-        printf("LED val 0x%x\n", val_line);
-        clock_nanosleep(CLOCK_MONOTONIC, 0, &loop_delay, NULL);
+  if (ball->pos_x <= 0){
+      ball->pos_x = 0;
     }
-
-    parlcd_mem_base = map_phys_address(PARLCD_REG_BASE_PHYS, PARLCD_REG_SIZE, 0);
-  /* If mapping fails exit with error code */
-    if (parlcd_mem_base == NULL)
-        exit(1);
-
-    printf("Font descriptors\n");
-    font_descriptor_t* fdes88 = &font_wArial_88; //  font template
-    font_descriptor_t* fdes44 = &font_wArial_44; //  font template
-    
-    frame_buffer_clear(game.fb);
-
-    // start of start-up screen ----------------------------------------------------
-    draw_string(105,60,"PONG",4,WHITE_COLOR,fdes88,game.fb);
-    draw_string(80,250,"PRESS ENTER!",11,WHITE_COLOR,fdes44,game.fb); 
-    lcd_draw(parlcd_mem_base, game.fb);
-
-    printf("PRESS ENTER TO CONTINUE!\n");
-    getchar(); // wait for enter
-    // end of start-up screen --------------------------------------------------------
-
-    frame_buffer_clear(game.fb);
-
-    // start of menu screen ----------------------------------------------------------
-    draw_string(105,15,"MENU",4,YELLOW_COLOR,fdes88,game.fb);
-    draw_string(30,100,"Keyboard mode",13,BLUE_COLOR,fdes44,game.fb); // option 0
-    draw_string(10,140,"Knob mode",10,YELLOW_COLOR,fdes44,game.fb);  // option 1
-    draw_string(10,180,"Arcade mode",11,YELLOW_COLOR,fdes44,game.fb); // option 2
-    lcd_draw(parlcd_mem_base, game.fb);
-
-
-    char c;
-    int option = 0;
-    while((c = getch()) != 'q'){
-        switch (c)
-        {
-        case '-': // menu up
-            if(option-1 < 0 ){
-                option = 2;
-            }else{
-                option = option -1; 
-            }
-            break;
-        case '+': // menu down
-            if(option+1 > 2 ){
-                option = 0;
-            }else{
-                option = option +1; 
-            }
-            break;
-        case 0x0A: // enter
-            if(option == 0){
-                keyboard_game(mem_base, parlcd_mem_base, game.fb);
-            }else if(option == 1){
-                knob_game(mem_base, parlcd_mem_base, game.fb);
-            }
-            break;
-        default:
-            break;
-        }
-        switch (option)
-        {
-        case 0: // option 0 selected
-            frame_buffer_clear(game.fb);
-            draw_string(105,15,"MENU",4,YELLOW_COLOR,fdes88,game.fb);
-            draw_string(30,100,"Keyboard mode",13,BLUE_COLOR,fdes44,game.fb); // option 0
-            draw_string(10,140,"Knob mode",10,YELLOW_COLOR,fdes44,game.fb);  // option 1
-            draw_string(10,180,"Arcade mode",11,YELLOW_COLOR,fdes44,game.fb); // option 2
-            lcd_draw(parlcd_mem_base, game.fb);
-            break;
-        case 1: // option 1 selected
-            frame_buffer_clear(game.fb);
-            draw_string(105,15,"MENU",4,YELLOW_COLOR,fdes88,game.fb);
-            draw_string(10,100,"Keyboard mode",13,YELLOW_COLOR,fdes44,game.fb); // option 0
-            draw_string(30,140,"Knob mode",10,BLUE_COLOR,fdes44,game.fb);  // option 1   
-            draw_string(10,180,"Arcade mode",11,YELLOW_COLOR,fdes44,game.fb); // option 2 
-            lcd_draw(parlcd_mem_base, game.fb); 
-            break;
-        case 2: // option 2 selected
-            frame_buffer_clear(game.fb);
-            draw_string(105,15,"MENU",4,YELLOW_COLOR,fdes88,game.fb);
-            draw_string(10,100,"Keyboard mode",13,YELLOW_COLOR,fdes44,game.fb); // option 0
-            draw_string(10,140,"Knob mode",10,YELLOW_COLOR,fdes44,game.fb);  // option 1
-            draw_string(30,180,"Arcade mode",11,BLUE_COLOR,fdes44,game.fb); // option 2
-            lcd_draw(parlcd_mem_base, game.fb);
-            break;
-        default:
-            break;
-        }  
+    if (ball->pos_y <= 18){
+      ball->pos_y = 18;
     }
-
-    frame_buffer_clear(game.fb);
-    draw_string(130,160,"END",3,WHITE_COLOR,fdes88,game.fb);
-    lcd_draw(parlcd_mem_base, game.fb);
-// end of menu screen ------------------------------------------------------------
-
-    if(game.fb){
-        free(game.fb);
+    if (ball->pos_x >= 462){
+      ball->pos_x = 462;
     }
-    printf("Goodbye world\n");
+    if (ball->pos_y >= 302){
+      ball->pos_y = 302;
+    }
+    printf("pos ball x%d ,y%d; smer: dx%f, dy%f\n", ball->pos_x, ball->pos_y, ball->dx, ball->dy);
 
-  return 0;
 }
