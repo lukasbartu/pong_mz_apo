@@ -26,19 +26,12 @@ typedef struct {
   int offset;
 } ball;
 
-static struct {
-  unsigned short *fb;
-
+typedef struct {
   int score_p1;
   int score_p2;
   
   int goal;
-} game = {
-  .score_p1 = 0,
-  .score_p2 = 0,
-
-  .goal = 0
-};
+} game;
 
 paddle initLeftpaddle();
 paddle initRightpaddle();
@@ -46,9 +39,9 @@ ball init_ball();
 
 void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right);
 
-void draw_score(unsigned short *fb, unsigned char *parlcd_mem_base);
-void goal(int p, unsigned char *mem_base, unsigned short *fb, unsigned char *parlcd_mem_base);
+void draw_score(unsigned short *fb, unsigned char *parlcd_mem_base, game *game);
+void goal(int p, unsigned char *mem_base, unsigned short *fb, unsigned char *parlcd_mem_base, game *game);
 
-void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right, unsigned short *fb, unsigned char *parlcd_mem_base);
+void update_ball(unsigned char *mem_base, ball *ball, paddle *left, paddle *right, unsigned short *fb, unsigned char *parlcd_mem_base, game *game);
 
 #endif
