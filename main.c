@@ -14,6 +14,7 @@
 #include "colors.h"
 #include "font_types.h"
 #include "utils.h"
+#include "menus.h"
 
 #define DISPLAY_WIDTH 480
 #define DISPLAY_HEIGHT 320
@@ -74,18 +75,14 @@ int main(int argc, char *argv[])
     frame_buffer_clear(fb);
 
     // start of menu screen ----------------------------------------------------------
-    draw_string(105, 15, "MENU", 4, YELLOW_COLOR, fdes88, fb);
-    draw_string(30, 100, "Keyboard mode", 13, BLUE_COLOR, fdes44, fb); // option 0
-    draw_string(10, 140, "Knob mode", 10, YELLOW_COLOR, fdes44, fb);   // option 1
-    draw_string(10, 180, "exit", 11, YELLOW_COLOR, fdes44, fb);        // option 2
-    lcd_draw(parlcd_mem_base, fb);
-
     char c = '0';
     int option = 0;
     bool quit = false;
-    bool newentry = false;
+    bool newentry = true;
     uint32_t rgb_knobs_value;
     uint8_t pushedknob;
+    // default settings
+    settings_struct settings = {.ball_speed = SPEED_1, .paddle_speed = SPEED_1, .player_one_color = COLOR_1, .player_two_color = COLOR_1}; 
     while (!quit){
         if (kbhit()){
             c = getch();
@@ -102,7 +99,7 @@ int main(int argc, char *argv[])
             c = '0';
             newentry = true;
         }else if (pushedknob == 0x01 || c == '+'){ //blue knob || +
-            if (option + 1 > 2){
+            if (option + 1 > 3){
                 option = 0;
             }else{
                 option = option + 1;
@@ -113,15 +110,19 @@ int main(int argc, char *argv[])
             c = '0';
             newentry = true;
             if (option == 0){
-                keyboard_game(mem_base, parlcd_mem_base, fb);
+                keyboard_game(mem_base, parlcd_mem_base, fb, &settings);
+                quit = play_again_screen(mem_base, parlcd_mem_base, fb);
             }else if (option == 1){
-                knob_game(mem_base, parlcd_mem_base, fb);
+                knob_game(mem_base, parlcd_mem_base, fb, &settings);
+                quit = play_again_screen(mem_base, parlcd_mem_base, fb);
             }else if (option == 2){
+                settings = settings_menu(mem_base, parlcd_mem_base, fb);
+            }else if (option == 3){
                 quit = true;
             }
         }
 
-        if (newentry){
+        if (newentry && !quit){
             newentry = false;
             switch (option)
             {
@@ -129,24 +130,36 @@ int main(int argc, char *argv[])
                 frame_buffer_clear(fb);
                 draw_string(105, 15, "MENU", 4, YELLOW_COLOR, fdes88, fb);
                 draw_string(30, 100, "Keyboard mode", 13, BLUE_COLOR, fdes44, fb); // option 0
-                draw_string(10, 140, "Knob mode", 10, YELLOW_COLOR, fdes44, fb);   // option 1
-                draw_string(10, 180, "exit", 11, YELLOW_COLOR, fdes44, fb);        // option 2
+                draw_string(10, 140, "Knob mode", 9, YELLOW_COLOR, fdes44, fb);    // option 1
+                draw_string(10, 180, "Settings", 8, YELLOW_COLOR, fdes44, fb);     // option 2
+                draw_string(10, 220, "Exit", 4, YELLOW_COLOR, fdes44, fb);         // option 3
                 lcd_draw(parlcd_mem_base, fb);
                 break;
             case 1: // option 1 selected
                 frame_buffer_clear(fb);
                 draw_string(105, 15, "MENU", 4, YELLOW_COLOR, fdes88, fb);
                 draw_string(10, 100, "Keyboard mode", 13, YELLOW_COLOR, fdes44, fb); // option 0
-                draw_string(30, 140, "Knob mode", 10, BLUE_COLOR, fdes44, fb);       // option 1
-                draw_string(10, 180, "exit", 11, YELLOW_COLOR, fdes44, fb);          // option 2
+                draw_string(30, 140, "Knob mode", 9, BLUE_COLOR, fdes44, fb);        // option 1
+                draw_string(10, 180, "Settings", 8, YELLOW_COLOR, fdes44, fb);       // option 2
+                draw_string(10, 220, "Exit", 4, YELLOW_COLOR, fdes44, fb);           // option 3
                 lcd_draw(parlcd_mem_base, fb);
                 break;
             case 2: // option 2 selected
                 frame_buffer_clear(fb);
                 draw_string(105, 15, "MENU", 4, YELLOW_COLOR, fdes88, fb);
                 draw_string(10, 100, "Keyboard mode", 13, YELLOW_COLOR, fdes44, fb); // option 0
-                draw_string(10, 140, "Knob mode", 10, YELLOW_COLOR, fdes44, fb);     // option 1
-                draw_string(30, 180, "exit", 11, BLUE_COLOR, fdes44, fb);            // option 2
+                draw_string(10, 140, "Knob mode", 9, YELLOW_COLOR, fdes44, fb);      // option 1
+                draw_string(30, 180, "Settings", 8, BLUE_COLOR, fdes44, fb);         // option 2
+                draw_string(10, 220, "Exit", 4, YELLOW_COLOR, fdes44, fb);           // option 3
+                lcd_draw(parlcd_mem_base, fb);
+                break;
+            case 3: // option 3 selected
+                frame_buffer_clear(fb);
+                draw_string(105, 15, "MENU", 4, YELLOW_COLOR, fdes88, fb);
+                draw_string(10, 100, "Keyboard mode", 13, YELLOW_COLOR, fdes44, fb); // option 0
+                draw_string(10, 140, "Knob mode", 9, YELLOW_COLOR, fdes44, fb);      // option 1
+                draw_string(10, 180, "Settings", 8, YELLOW_COLOR, fdes44, fb);       // option 2
+                draw_string(30, 220, "Exit", 4, BLUE_COLOR, fdes44, fb);             // option 3
                 lcd_draw(parlcd_mem_base, fb);
                 break;
             default:
