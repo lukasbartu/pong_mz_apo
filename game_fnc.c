@@ -129,7 +129,7 @@ void goal(int p, unsigned char *mem_base, unsigned short *fb, unsigned char *par
       *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = 0x00000000; //off
       usleep(300000);
     }
-
+  fflush(stdin);
 }
 
 
