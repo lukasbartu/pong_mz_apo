@@ -2,12 +2,14 @@
 
 This program is implementatios of game of pong on MZ_APO hardware. It’s not exactly the original, just inspired. 
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/****************************/
 compile and run using make:
-
-TARGET_IP *board IP* make run
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TARGET_IP *board IP* make run
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/****************************/
 for controls use:
 Press ‚+‘ or ‚blue knob‘         Move down in menu
 Press ‚-‘ or ‚red knob‘            Move up in menu
