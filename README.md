@@ -11,6 +11,7 @@ TARGET_IP *board IP* make run
 
 
 /****************************/
+
 for controls use:
 Press ‚+‘ or ‚blue knob‘         Move down in menu
 Press ‚-‘ or ‚red knob‘            Move up in menu
