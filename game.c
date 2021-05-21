@@ -29,7 +29,7 @@ void keyboard_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsi
     left_paddle.position = 160;
     right_paddle.position = 160;
 
-    while ((game.score_p1 <= 5 && game.score_p2 <= 5) && !quit){
+    while ((game.score_p1 <= 4 && game.score_p2 <= 4) && !quit){
 
         left_paddle.speed = 0.0;
         right_paddle.speed = 0.0;
@@ -135,7 +135,7 @@ void knob_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned
     game.score_p2 = 0;
 
     bool quit = false;
-    while (game.score_p1 <= 5 && game.score_p2 <= 5 && !quit){
+    while (game.score_p1 <= 4 && game.score_p2 <= 4 && !quit){
         
         update_paddle_position(mem_base, &left_paddle, &right_paddle);
         update_ball(mem_base, &ball, &left_paddle, &right_paddle, fb, parlcd_mem_base, &game);
