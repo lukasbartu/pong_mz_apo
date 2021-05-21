@@ -1,3 +1,8 @@
+/*******************************************************************
+  This is main file of project MZ_APO Pong
+
+    authors : VLadimir Snejd, Lukas Bartunek
+ *******************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
