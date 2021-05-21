@@ -57,7 +57,7 @@ settings_struct settings_menu(unsigned char *mem_base,unsigned char *parlcd_mem_
             }
         }
 
-        if (newentry){
+        if (newentry){  
             newentry = false;
             switch (option)
             {
@@ -68,8 +68,8 @@ settings_struct settings_menu(unsigned char *mem_base,unsigned char *parlcd_mem_
                 draw_string(300, 100, ((settings.ball_speed == 1) ? "1X" : (settings.ball_speed == 2) ? "2X" : "0.5X"), (settings.ball_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
                 draw_string(10, 140, "Paddle speed", 12, YELLOW_COLOR, fdes44, fb);                 // option 1
                 draw_string(300, 140, ((settings.paddle_speed == 1) ? "1X" : (settings.paddle_speed == 2) ? "2X" : "0.5X"), (settings.paddle_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
-                draw_string(10, 180, "Player 1 color", 14, YELLOW_COLOR, fdes44, fb);               // option 2
-                draw_string(10, 220, "Player 2 color", 14, YELLOW_COLOR, fdes44, fb);               // option 3
+                draw_string(10, 180, "Player 1 colour", 14, YELLOW_COLOR, fdes44, fb);               // option 2
+                draw_string(10, 220, "Player 2 colour", 14, YELLOW_COLOR, fdes44, fb);               // option 3
                 draw_string(10, 260, "Back", 4, YELLOW_COLOR, fdes44, fb);                          // option 4
                 lcd_draw(parlcd_mem_base, fb);
                 break;
@@ -80,8 +80,8 @@ settings_struct settings_menu(unsigned char *mem_base,unsigned char *parlcd_mem_
                 draw_string(300, 100, ((settings.ball_speed == 1) ? "1X" : (settings.ball_speed == 2) ? "2X" : "0.5X"), (settings.ball_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
                 draw_string(30, 140, "Paddle speed", 12, BLUE_COLOR, fdes44, fb);                 // option 1
                 draw_string(300, 140, ((settings.paddle_speed == 1) ? "1X" : (settings.paddle_speed == 2) ? "2X" : "0.5X"), (settings.paddle_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
-                draw_string(10, 180, "Player 1 color", 14, YELLOW_COLOR, fdes44, fb);               // option 2
-                draw_string(10, 220, "Player 2 color", 14, YELLOW_COLOR, fdes44, fb);               // option 3
+                draw_string(10, 180, "Player 1 colour", 14, YELLOW_COLOR, fdes44, fb);               // option 2
+                draw_string(10, 220, "Player 2 colour", 14, YELLOW_COLOR, fdes44, fb);               // option 3
                 draw_string(10, 260, "Back", 4, YELLOW_COLOR, fdes44, fb);                          // option 4
                 lcd_draw(parlcd_mem_base, fb);
                 break;
@@ -92,8 +92,8 @@ settings_struct settings_menu(unsigned char *mem_base,unsigned char *parlcd_mem_
                 draw_string(300, 100, ((settings.ball_speed == 1) ? "1X" : (settings.ball_speed == 2) ? "2X" : "0.5X"), (settings.ball_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
                 draw_string(10, 140, "Paddle speed", 12, YELLOW_COLOR, fdes44, fb);                 // option 1
                 draw_string(300, 140, ((settings.paddle_speed == 1) ? "1X" : (settings.paddle_speed == 2) ? "2X" : "0.5X"), (settings.paddle_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
-                draw_string(30, 180, "Player 1 color", 14, settings.player_one_color, fdes44, fb);  // option 2
-                draw_string(10, 220, "Player 2 color", 14, YELLOW_COLOR, fdes44, fb);               // option 3
+                draw_string(30, 180, "Player 1 colour", 14, settings.player_one_color, fdes44, fb);  // option 2
+                draw_string(10, 220, "Player 2 colour", 14, YELLOW_COLOR, fdes44, fb);               // option 3
                 draw_string(10, 260, "Back", 4, YELLOW_COLOR, fdes44, fb);                          // option 4
                 lcd_draw(parlcd_mem_base, fb);
                 break;
@@ -104,8 +104,8 @@ settings_struct settings_menu(unsigned char *mem_base,unsigned char *parlcd_mem_
                draw_string(300, 100, ((settings.ball_speed == 1) ? "1X" : (settings.ball_speed == 2) ? "2X" : "0.5X"), (settings.ball_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
                 draw_string(10, 140, "Paddle speed", 12, YELLOW_COLOR, fdes44, fb);                 // option 1
                 draw_string(300, 140, ((settings.paddle_speed == 1) ? "1X" : (settings.paddle_speed == 2) ? "2X" : "0.5X"), (settings.paddle_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
-                draw_string(10, 180, "Player 1 color", 14, YELLOW_COLOR, fdes44, fb);               // option 2
-                draw_string(30, 220, "Player 2 color", 14, settings.player_two_color, fdes44, fb);  // option 3
+                draw_string(10, 180, "Player 1 colour", 14, YELLOW_COLOR, fdes44, fb);               // option 2
+                draw_string(30, 220, "Player 2 colour", 14, settings.player_two_color, fdes44, fb);  // option 3
                 draw_string(10, 260, "Back", 4, YELLOW_COLOR, fdes44, fb);                          // option 4
                 lcd_draw(parlcd_mem_base, fb);
                 break;
@@ -116,8 +116,8 @@ settings_struct settings_menu(unsigned char *mem_base,unsigned char *parlcd_mem_
                 draw_string(300, 100, ((settings.ball_speed == 1) ? "1X" : (settings.ball_speed == 2) ? "2X" : "0.5X"), (settings.ball_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
                 draw_string(10, 140, "Paddle speed", 12, YELLOW_COLOR, fdes44, fb);                 // option 1
                 draw_string(300, 140, ((settings.paddle_speed == 1) ? "1X" : (settings.paddle_speed == 2) ? "2X" : "0.5X"), (settings.paddle_speed == 0.5) ? 4 : 2, WHITE_COLOR, fdes44, fb );
-                draw_string(10, 180, "Player 1 color", 14, YELLOW_COLOR, fdes44, fb);                // option 2
-                draw_string(10, 220, "Player 2 color", 14, YELLOW_COLOR, fdes44, fb);                // option 3
+                draw_string(10, 180, "Player 1 colour", 14, YELLOW_COLOR, fdes44, fb);                // option 2
+                draw_string(10, 220, "Player 2 colour", 14, YELLOW_COLOR, fdes44, fb);                // option 3
                 draw_string(30, 260, "Back", 4, BLUE_COLOR, fdes44, fb);                             // option 4
                 lcd_draw(parlcd_mem_base, fb);
                 break;
