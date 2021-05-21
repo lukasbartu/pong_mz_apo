@@ -15,14 +15,14 @@
 #include "utils.h"
 
 
+
 #define PADDLE_THICNESS 20 //px
 #define PADDLE_HEIGHT 70   //px
 #define KNOB_MAX_VALUE 0xFF //used to calculate relative position of knob
 
 
 /*paddle struct - carries information about player's paddle*/
-typedef struct
-{
+typedef struct {
   int start;    //start value for frame buffer
   int thicness; //constant for frame buffer
   int offset;   //offset of position from top for frame buffer
@@ -38,6 +38,7 @@ typedef struct {
   int start_y;
   float dy;
   float dx;
+  int speed;
   bool collided;
   int offset;
 } ball;
@@ -51,7 +52,7 @@ typedef struct {
 
 paddle initLeftpaddle();
 paddle initRightpaddle();
-ball init_ball();
+ball init_ball(int speed);
 
 void update_paddle_position(unsigned char *mem_base, paddle *left, paddle *right);
 
