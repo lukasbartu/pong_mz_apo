@@ -1,13 +1,25 @@
 #include "game.h"
 
+#include "menus.h"
+
 void keyboard_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned short *fb, settings_struct *settings)
 {
     bool quit = false;
     paddle left_paddle = initLeftpaddle();   //init
     paddle right_paddle = initRightpaddle(); //init
-    ball ball = init_ball();
+    int speed=5;
+    if(settings->ball_speed == SPEED_1){
+        speed = 5;
+    }else if(settings->ball_speed == SPEED_2){
+        speed = 10;
+    }else if(settings->ball_speed == SPEED_3){
+        speed = 3;
+    }
 
-    init_ball();
+    ball ball = init_ball(speed);
+
+    int step = settings->paddle_speed * 10;
+
     int ch = 0;
     game game; 
     game.goal = 0;
@@ -27,19 +39,19 @@ void keyboard_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsi
             switch (ch)
             {
             case 'k':
-                right_paddle.position += 5;
+                right_paddle.position += step;
                 left_paddle.speed = 0.5;
                 break;
             case 'j':
-                right_paddle.position -= 5;
+                right_paddle.position -= step;
                 right_paddle.speed = 0.5;
                 break;
             case 'd':
-                left_paddle.position += 5;
+                left_paddle.position += step;
                 left_paddle.speed = 0.5;
                 break;
             case 's':
-                left_paddle.position -= 5;
+                left_paddle.position -= step;
                 right_paddle.speed = 0.5;
                 break;
             case 'q':
@@ -106,9 +118,17 @@ void knob_game(unsigned char *mem_base, unsigned char *parlcd_mem_base, unsigned
 {
     paddle left_paddle = initLeftpaddle();   //init
     paddle right_paddle = initRightpaddle(); //init
-    ball ball = init_ball();
+    int speed=5;
+    if(settings->ball_speed == SPEED_1){
+        speed = 5;
+    }else if(settings->ball_speed == SPEED_2){
+        speed = 10;
+    }else if(settings->ball_speed == SPEED_3){
+        speed = 3;
+    }
 
-    init_ball();
+    ball ball = init_ball(speed);
+
     game game; 
     game.goal = 0;
     game.score_p1 = 0;
