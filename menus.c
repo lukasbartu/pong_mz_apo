@@ -27,7 +27,7 @@ settings_struct settings_menu(unsigned char *mem_base,unsigned char *parlcd_mem_
 
         if (pushedknob == 0x04 || c == '-'){ //red knob || -
             if (option - 1 < 0){
-                option = 2;
+                option = 4;
             }else{
                 option = option - 1;
             }
