@@ -72,9 +72,15 @@ int main(int argc, char *argv[])
     draw_string(105, 60, "PONG", 4, WHITE_COLOR, fdes88, fb);
     draw_string(80, 250, "PRESS ENTER!", 11, WHITE_COLOR, fdes44, fb);
     lcd_draw(parlcd_mem_base, fb);
-
+    
     printf("PRESS ENTER TO CONTINUE!\n");
-    getchar(); // wait for enter
+    uint32_t rgb_knobs_value =  *(volatile uint32_t *)(mem_base + SPILED_REG_KNOBS_8BIT_o);;
+    uint8_t pushedknob = (uint8_t)(rgb_knobs_value >> 24);;
+    while ((pushedknob != 0x02) || (getchar() != '\n'))   // wait for enter || green knob press
+    {
+        rgb_knobs_value = *(volatile uint32_t *)(mem_base + SPILED_REG_KNOBS_8BIT_o);
+        pushedknob = (uint8_t)(rgb_knobs_value >> 24);   
+    }    
     // end of start-up screen --------------------------------------------------------
 
     frame_buffer_clear(fb);
@@ -84,8 +90,6 @@ int main(int argc, char *argv[])
     int option = 0;
     bool quit = false;
     bool newentry = true;
-    uint32_t rgb_knobs_value;
-    uint8_t pushedknob;
     // default settings
     settings_struct settings = {.ball_speed = SPEED_1, .paddle_speed = SPEED_1, .player_one_color = COLOR_1, .player_two_color = COLOR_1}; 
     while (!quit){
