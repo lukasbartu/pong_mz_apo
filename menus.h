@@ -21,8 +21,8 @@
 #define SPEED_3 0.5
 
 #define COLOR_1 PINK_COLOR
-#define COLOR_2 PURPLE_COLOR
-#define COLOR_3 GREEN_COLOR
+#define COLOR_2 GREEN_COLOR
+#define COLOR_3 RED_COLOR
 
 
 typedef struct
